@@ -1,0 +1,29 @@
+* Installation
+- ghc: haskell.org
+- stack: haskellstack.org
+
+- test stack:
+#+begin_src bash
+stack new test1 simple # create a project
+cd test1               # move to the project dir
+stack setup            # install the ghc
+stack install          # build a project and install it
+test1                  # launch it
+#+end_src
+- compile:
+#+begin_src haskell
+-- Main.hs
+
+main = putStrLn "Hello FP world!"
+
+#+end_src
+* Interpreter
+stack ghci
+
+:r
+
+:q
+
+:?
+
+
