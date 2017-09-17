@@ -18,12 +18,9 @@ main = putStrLn "Hello FP world!"
 
 #+end_src
 * Interpreter
+REPL can be launched with 
+#+begin_src bash
 stack ghci
+#+end_src
 
-:r
-
-:q
-
-:?
-
-
+Commands begin with colon. For example, =:r= (=:reload:=) command reloads source file, =:q= command quits REPL and =:?= shows help.
