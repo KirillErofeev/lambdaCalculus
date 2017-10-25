@@ -58,6 +58,7 @@ data TermP = TermP TermS
            | Snd TermP
            -- (7)
            | Cons TermP TermP
+           | Nil
            | IsNil TermP
            | Head TermP
            | Tail TermP
