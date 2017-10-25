@@ -37,7 +37,7 @@ betaI = error "Implement me!"
 data TermP = TermP TermS
            -- (3)
            | Boolean Bool
-           | Iff Bool TermP TermP
+           | Iff TermP TermP TermP
            | Not TermP
            | And TermP TermP
            | Or TermP TermP
