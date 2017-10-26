@@ -66,22 +66,35 @@ findRelation terms name args =
   listToMaybe $ mapMaybe (isCompatible name args) terms
 
 
-substitute :: [Name] -> [Simple] -> PrologTerm -> PrologTerm
-substitute names args term = error "Implement me!"
+substituteSim :: [(Name, Simple)] -> Simple -> Simple
+substituteSim ss sim = case sim of
+  Var name -> case lookup name ss of
+    Nothing -> Var name
+    Just s -> s
+  s -> s
+
+substitute :: [(Name, Simple)] -> PrologTerm -> PrologTerm
+substitute ss term = case term of
+  Sim s -> Sim $ substituteSim ss s
+  Relation name args -> error "Implement me!"
+  _ -> error "Implement me!"
 
 isImplication :: Name -> [Simple] -> PrologTerm -> Maybe [Goal]
 isImplication name args term = case term of
   Sim _ -> Nothing
   Relation _ _ -> Nothing
   Implies iName iArgs terms
-    | iName == name -> let
-        newTerms = map (substitute iArgs args) terms
+    | iName == name && length iArgs == length args -> let
+        newTerms = map (substitute $ zip iArgs args) terms
         in error "Implement me!"
     | otherwise -> Nothing
 
+goalsToSubst = error "Implement me!"
+
 findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
-findImplication terms name args =
-  mapMaybe (isImplication name args) terms
+findImplication terms name args = let
+  goals = mapMaybe (isImplication name args) terms
+  in goalsToSubst goals
 
 eval :: Prolog -> Goal -> Maybe [Subst]
 eval knowledge (relName, relArgs) = let
