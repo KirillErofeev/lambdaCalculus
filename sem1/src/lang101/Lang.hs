@@ -27,6 +27,16 @@ toIdent (Ident s) = Just s
 toIdent _ = Nothing
 
 
+isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe Subst
+isCompatible _ _ _ = Nothing
+
+findRelation :: Prolog -> Name -> [Simple] -> Maybe [Subst]
+findRelation terms name args =
+  listToMaybe $ mapMaybe (isCompatible name args) terms
+
+findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
+findImplication _ _ _ = error "Implement me!"
+
 eval :: Prolog -> (Name,[Simple]) -> Maybe [Subst]
 eval knowledge (relName, relArgs) = let
   mRelation = findRelation knowledge relName relArgs
