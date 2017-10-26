@@ -7,9 +7,7 @@ import Data.Maybe
 type Name = String
 
 data Simple = Const Name
-            | Nat Int
             | Var Name
-            | Arr [Simple]
             | Any
             deriving (Eq,Show,Read)
 
@@ -79,46 +77,6 @@ test101 =
     ]
   ]
 
-test :: Prolog
-test =
-  [ Function "neighbors" ["X", "Y", "List"]
-    [ Relation "nextto" [Var "X", Var "Y", Var "List"]
-    , Relation "nextto" [Var "Y", Var "X", Var "List"]
-    ]
-    -- 1. Норвежец живёт в первом доме.
-  , Relation "nth" [ Nat 1
-                   , Var "Houses"
-                   , Arr [ Const "norwegian"
-                         , Any
-                         , Any
-                         , Any
-                         , Any
-                         ]
-                   ]
-    -- 2. Англичанин живёт в красном доме.
-  , Relation "member" [ Arr [ Const "englishman"
-                            , Any
-                            , Any
-                            , Any
-                            , Const "red"
-                            ]
-                      , Var "Houses"
-                      ]
-    -- 3. Зелёный дом находится слева от белого, рядом с ним.
-  , Relation "nextto" [ Arr [ Any
-                            , Any
-                            , Any
-                            , Any
-                            , Const "green"
-                            ]
-                      , Arr [ Any
-                            , Any
-                            , Any
-                            , Any
-                            , Const "white"]
-                      , Var "Houses"
-                      ]
-  ]
 
 main = return ()
 
