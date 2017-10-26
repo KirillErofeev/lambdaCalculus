@@ -25,23 +25,34 @@ data Subst = Subst { sVar :: Name
 
 
 
-unify :: Simple -> Simple -> Maybe Subst
-unify (Const a) (Const b) = a == b
-unify (Var x) (Const b) = True
-unify (Const a) (Var y) = True
-unify Any _ = True
-unify _ Any = True
-unify _ _ = False
+unify :: [Subst] -> [Simple] -> [Simple] -> Maybe [Subst]
+unify ss [] [] = Just ss
+unify ss (_:_) [] = Nothing
+unify ss [] (_:_) = Nothing
+unify ss (x:xs) (y:ys) = case (x,y) of
+  (Const a, Const b) | a == b -> unify ss xs ys
+                     | otherwise -> Nothing
+  (Var x, Const b) -> case lookupSubst x ss of
+                        Nothing -> unify (Subst x b : ss) xs ys
+                        Just value
+                          | value == b -> unify ss xs ys
+                          | otherwise -> Nothing
+  (Const a, Var y) -> case lookupSubst y ss of
+                        Nothing -> unify (Subst y a : ss) xs ys
+                        Just value
+                          | value == a -> unify ss xs ys
+                          | otherwise -> Nothing
+  (Any, _) -> unify ss xs ys
+  (_, Any) -> unify ss xs ys
+  (_, _) -> Nothing
 
 isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe Subst
 isCompatible relName relArgs term = case term of
   Sim _ -> Nothing
   Implies _ _ _ -> Nothing
-  Relation name args |
-    name == relName &&
-    length relArgs == length args ->
-      forM_ (zip relArgs args) $ \(a,b) -> do
-        unify relArgs args
+  Relation name args
+    | name == relName -> unify [] relArgs args
+    | otherwise -> Nothing
 
 findRelation :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findRelation terms name args =
