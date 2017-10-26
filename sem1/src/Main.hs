@@ -1,8 +1,4 @@
-{-# LANGUAGE TupleSections #-}
-
 module Main where
-
-import Data.List
 
 newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
 
@@ -40,7 +36,12 @@ betaI = error "Implement me!"
 
 -- выполнять редукцию до конца (но не больше 10000 шагов из-за возможности зависания)
 full :: (TermS -> a) -> (a -> Maybe a) -> TermS -> a
-full a b = last . take 10000 . unfoldr (\t -> (t,) <$> b t) . a
+full a b term = lastUnf 10000 b (a term)
+  where lastUnf :: Int -> (a -> Maybe a) -> a -> a
+        lastUnf 0 _ x = x
+        lastUnf n f x = case f x of
+          Nothing -> x
+          Just y -> lastUnf (n-1) f y
 
 data TermP = TermP TermS
            -- (3)
