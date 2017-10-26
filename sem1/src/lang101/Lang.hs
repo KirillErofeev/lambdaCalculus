@@ -24,6 +24,11 @@ data Subst = Subst { sVar :: Name
                    } deriving (Eq,Show,Read)
 
 
+lookupSubst :: Name -> [Subst] -> Maybe Name
+lookupSubst name [] = Nothing
+lookupSubst name (s : rest)
+  | sVar s == name  =  Just $ sValue s
+  | otherwise       =  lookupSubst name rest
 
 unify :: [Subst] -> [Simple] -> [Simple] -> Maybe [Subst]
 unify ss [] [] = Just ss
