@@ -76,5 +76,5 @@ solve = error "Choose your variant"
 
 main :: IO ()
 main = do
-  s <- readLn
+  s <- read <$> getLine
   print $ solve s
