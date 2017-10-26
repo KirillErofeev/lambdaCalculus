@@ -51,7 +51,7 @@ unify ss (x:xs) (y:ys) = case (x,y) of
   (_, Any) -> unify ss xs ys
   (_, _) -> Nothing
 
-isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe Subst
+isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe [Subst]
 isCompatible relName relArgs term = case term of
   Sim _ -> Nothing
   Implies _ _ _ -> Nothing
