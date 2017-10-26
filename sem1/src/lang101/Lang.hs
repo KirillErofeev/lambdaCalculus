@@ -27,8 +27,17 @@ toIdent (Ident s) = Just s
 toIdent _ = Nothing
 
 
+isCompatibleSim :: Simple -> Simple -> Bool
+isCompatibleSim _ _ = False
+
 isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe Subst
-isCompatible _ _ _ = Nothing
+isCompatible relName relArgs term = case term of
+  Sim _ -> Nothing
+  Implies _ _ _ -> Nothing
+  Relation name args ->
+    name == relName &&
+    length relArgs == length args &&
+    and (zipWith isCompatibleSim relArgs args)
 
 findRelation :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findRelation terms name args =
