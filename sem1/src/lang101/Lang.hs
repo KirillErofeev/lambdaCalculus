@@ -28,7 +28,12 @@ toIdent _ = Nothing
 
 
 eval :: Prolog -> (Name,[Simple]) -> Maybe [Subst]
-eval knowledge (relName, relArgs) = error "Implement me!"
+eval knowledge (relName, relArgs) = let
+  mRelation = findRelation knowledge relName relArgs
+  mImplies = findImplication knowledge relName relArgs
+  in case mRelation of
+       Just relSubst -> Just relSubst
+       Nothing -> mImplies
 
 
 test101 :: Prolog
