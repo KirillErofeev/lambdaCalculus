@@ -2,6 +2,7 @@
 
 module Main where
 
+import Control.Monad
 import Data.Maybe
 
 type Name = String
@@ -22,22 +23,25 @@ data Subst = Subst { sVar :: Name
                    , sValue :: Name
                    } deriving (Eq,Show,Read)
 
-toIdent :: Fact -> Maybe Simple
-toIdent (Ident s) = Just s
-toIdent _ = Nothing
 
 
-isCompatibleSim :: Simple -> Simple -> Bool
-isCompatibleSim _ _ = False
+unify :: Simple -> Simple -> Maybe Subst
+unify (Const a) (Const b) = a == b
+unify (Var x) (Const b) = True
+unify (Const a) (Var y) = True
+unify Any _ = True
+unify _ Any = True
+unify _ _ = False
 
 isCompatible :: Name -> [Simple] -> PrologTerm -> Maybe Subst
 isCompatible relName relArgs term = case term of
   Sim _ -> Nothing
   Implies _ _ _ -> Nothing
-  Relation name args ->
+  Relation name args |
     name == relName &&
-    length relArgs == length args &&
-    and (zipWith isCompatibleSim relArgs args)
+    length relArgs == length args ->
+      forM_ (zip relArgs args) $ \(a,b) -> do
+        unify relArgs args
 
 findRelation :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findRelation terms name args =
