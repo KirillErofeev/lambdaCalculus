@@ -23,6 +23,8 @@ data Subst = Subst { sVar :: Name
                    , sValue :: Name
                    } deriving (Eq,Show,Read)
 
+type Goal = (Name, [Simple])
+
 
 lookupSubst :: Name -> [Subst] -> Maybe Name
 lookupSubst name [] = Nothing
@@ -63,10 +65,25 @@ findRelation :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findRelation terms name args =
   listToMaybe $ mapMaybe (isCompatible name args) terms
 
-findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
-findImplication _ _ _ = error "Implement me!"
 
-eval :: Prolog -> (Name,[Simple]) -> Maybe [Subst]
+substitute :: [Name] -> [Simple] -> PrologTerm -> PrologTerm
+substitute names args term = error "Implement me!"
+
+isImplication :: Name -> [Simple] -> PrologTerm -> Maybe [Goal]
+isImplication name args term = case term of
+  Sim _ -> Nothing
+  Relation _ _ -> Nothing
+  Implies iName iArgs terms
+    | iName == name -> let
+        newTerms = map (substitute iArgs args) terms
+        in error "Implement me!"
+    | otherwise -> Nothing
+
+findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
+findImplication terms name args =
+  mapMaybe (isImplication name args) terms
+
+eval :: Prolog -> Goal -> Maybe [Subst]
 eval knowledge (relName, relArgs) = let
   mRelation = findRelation knowledge relName relArgs
   mImplies = findImplication knowledge relName relArgs
