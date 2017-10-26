@@ -16,15 +16,19 @@ data PrologTerm = Sim Simple
                 | Implies Name [Name] [PrologTerm]
                 deriving (Eq,Show,Read)
 
-type Knowledge = [PrologTerm]
+type Prolog = [PrologTerm]
+
+data Subst = Subst { sVar :: Name
+                   , sValue :: Name
+                   } deriving (Eq,Show,Read)
 
 toIdent :: Fact -> Maybe Simple
 toIdent (Ident s) = Just s
 toIdent _ = Nothing
 
 
-updateKB :: Knowledge -> PrologTerm -> Knowledge
-updateKB = error "Implement me!"
+eval :: Prolog -> (Name,[Simple]) -> Maybe [Subst]
+eval knowledge (relName, relArgs) = error "Implement me!"
 
 
 test101 :: Prolog
