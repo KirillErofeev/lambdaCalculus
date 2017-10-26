@@ -1,4 +1,8 @@
+{-# LANGUAGE TupleSections #-}
+
 module Main where
+
+import Data.List
 
 newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
 
@@ -34,6 +38,10 @@ toTermI = error "Implement me!"
 betaI :: TermI -> Maybe TermI
 betaI = error "Implement me!"
 
+-- выполнять редукцию до конца (но не больше 10000 шагов из-за возможности зависания)
+full :: (TermS -> a) -> (a -> Maybe a) -> TermS -> a
+full a b = last . take 10000 . unfoldr (\t -> (t,) <$> b t) . a
+
 data TermP = TermP TermS
            -- (3)
            | Boolean Bool
@@ -67,12 +75,12 @@ data TermP = TermP TermS
 toTermS :: TermP -> TermS
 toTermS = error "Implement me!"
 
-solve :: TermP -> Either (Maybe TermI) (Maybe TermS)
+solve :: TermP -> Either TermI TermS
 solve = error "Choose your variant"
 -- (1)
--- solve = Right . beta . alpha . toTermS
+-- solve = Right . full alpha beta . toTermS
 -- (2)
--- solve = Left . betaI . toTermI . toTermS
+-- solve = Left . full toTermI betaI . toTermS
 
 main :: IO ()
 main = do
