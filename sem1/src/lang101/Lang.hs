@@ -101,7 +101,7 @@ goalToSubst terms ((name, args) : goals) = do
   s <- findRelation terms name args
   let subst = map (\el -> (sVar el, sValue el)) s
       terms' = map (substitute subst) terms
-  rest <- goalToSubst terms goals
+  rest <- goalToSubst terms' goals
   return $ s ++ rest
 
 goalsToSubst :: Prolog -> [[Goal]] -> Maybe [Subst]
