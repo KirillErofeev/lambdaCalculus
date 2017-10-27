@@ -95,7 +95,11 @@ isImplication name args term = case term of
         in Just goals
     | otherwise -> Nothing
 
-goalsToSubst = error "Implement me!"
+goalToSubst :: [Goal] -> Maybe [Subst]
+goalToSubst goals = error "Implement me!"
+
+goalsToSubst :: [[Goal]] -> Maybe [Subst]
+goalsToSubst = listToMaybe . mapMaybe goalToSubst
 
 findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findImplication terms name args = let
@@ -117,6 +121,15 @@ test101 =
   , Relation "human" [Const "platon"]
   , Implies "mortal" ["Someone"]
     [ Relation "human" [Var "Someone"]
+    ]
+  , Relation "parent" [Const "platon", Const "sokrat"]
+  , Relation "parent" [Const "sokrat", Const "aristotle"]
+  , Implies "descends" ["X","Y"]
+    [ Relation "parent" [Var "Y", Var "X"]
+    ]
+  , Implies "descends" ["X","Y"]
+    [ Relation "parent" [Var "Y", Var "Z"]
+    , Relation "descends" [Var "Z", Var "X"]
     ]
   ]
 
