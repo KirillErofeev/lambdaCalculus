@@ -102,8 +102,8 @@ substituteGoal ss (name, args) =
 
 goalToSubst :: Prolog -> [Goal] -> Maybe [Subst]
 goalToSubst _ [] = Just []
-goalToSubst terms ((name, args) : goals) = do
-  s <- findRelation terms name args
+goalToSubst terms (goal : goals) = do
+  s <- eval terms goal
   let goals' = map (substituteGoal s) goals
   rest <- goalToSubst terms goals'
   return $ s ++ rest
@@ -113,7 +113,7 @@ goalsToSubst terms = listToMaybe . mapMaybe (goalToSubst terms)
 
 findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findImplication terms name args = let
- [Const "platon",Var "Z"] goals = mapMaybe (isImplication name args) terms
+  goals = mapMaybe (isImplication name args) terms
   in goalsToSubst terms goals
 
 eval :: Prolog -> Goal -> Maybe [Subst]
