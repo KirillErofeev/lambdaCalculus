@@ -95,13 +95,17 @@ isImplication name args term = case term of
         in Just goals
     | otherwise -> Nothing
 
+substituteGoal :: [Subst] -> Goal -> Goal
+substituteGoal ss (name, args) =
+  (name, map (substituteSim ss') args)
+  where ss' = map (\s -> (sVar s, sValue s)) ss
+
 goalToSubst :: Prolog -> [Goal] -> Maybe [Subst]
 goalToSubst _ [] = Just []
 goalToSubst terms ((name, args) : goals) = do
   s <- findRelation terms name args
-  let subst = map (\el -> (sVar el, sValue el)) s
-      terms' = map (substitute subst) terms
-  rest <- goalToSubst terms' goals
+  let goals' = map (substituteGoal s) goals
+  rest <- goalToSubst terms goals'
   return $ s ++ rest
 
 goalsToSubst :: Prolog -> [[Goal]] -> Maybe [Subst]
@@ -109,7 +113,7 @@ goalsToSubst terms = listToMaybe . mapMaybe (goalToSubst terms)
 
 findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findImplication terms name args = let
-  goals = mapMaybe (isImplication name args) terms
+ [Const "platon",Var "Z"] goals = mapMaybe (isImplication name args) terms
   in goalsToSubst terms goals
 
 eval :: Prolog -> Goal -> Maybe [Subst]
