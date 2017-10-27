@@ -20,13 +20,13 @@ data PrologTerm = Sim Simple
 type Prolog = [PrologTerm]
 
 data Subst = Subst { sVar :: Name
-                   , sValue :: Name
+                   , sValue :: Simple
                    } deriving (Eq,Show,Read)
 
 type Goal = (Name, [Simple])
 
 
-lookupSubst :: Name -> [Subst] -> Maybe Name
+lookupSubst :: Name -> [Subst] -> Maybe Simple
 lookupSubst name [] = Nothing
 lookupSubst name (s : rest)
   | sVar s == name  =  Just $ sValue s
@@ -40,14 +40,14 @@ unify ss (x:xs) (y:ys) = case (x,y) of
   (Const a, Const b) | a == b -> unify ss xs ys
                      | otherwise -> Nothing
   (Var x, Const b) -> case lookupSubst x ss of
-                        Nothing -> unify (Subst x b : ss) xs ys
+                        Nothing -> unify (Subst x (Const b) : ss) xs ys
                         Just value
-                          | value == b -> unify ss xs ys
+                          | value == Const b -> unify ss xs ys
                           | otherwise -> Nothing
   (Const a, Var y) -> case lookupSubst y ss of
-                        Nothing -> unify (Subst y a : ss) xs ys
+                        Nothing -> unify (Subst y (Const a) : ss) xs ys
                         Just value
-                          | value == a -> unify ss xs ys
+                          | value == Const a -> unify ss xs ys
                           | otherwise -> Nothing
   (Any, _) -> unify ss xs ys
   (_, Any) -> unify ss xs ys
@@ -95,16 +95,22 @@ isImplication name args term = case term of
         in Just goals
     | otherwise -> Nothing
 
-goalToSubst :: [Goal] -> Maybe [Subst]
-goalToSubst goals = error "Implement me!"
+goalToSubst :: Prolog -> [Goal] -> Maybe [Subst]
+goalToSubst _ [] = Just []
+goalToSubst terms ((name, args) : goals) = do
+  s <- findRelation terms name args
+  let subst = map (\el -> (sVar el, sValue el)) s
+      terms' = map (substitute subst) terms
+  rest <- goalToSubst terms goals
+  return $ s ++ rest
 
-goalsToSubst :: [[Goal]] -> Maybe [Subst]
-goalsToSubst = listToMaybe . mapMaybe goalToSubst
+goalsToSubst :: Prolog -> [[Goal]] -> Maybe [Subst]
+goalsToSubst terms = listToMaybe . mapMaybe (goalToSubst terms)
 
 findImplication :: Prolog -> Name -> [Simple] -> Maybe [Subst]
 findImplication terms name args = let
   goals = mapMaybe (isImplication name args) terms
-  in goalsToSubst goals
+  in goalsToSubst terms goals
 
 eval :: Prolog -> Goal -> Maybe [Subst]
 eval knowledge (relName, relArgs) = let
@@ -129,7 +135,7 @@ test101 =
     ]
   , Implies "descends" ["X","Y"]
     [ Relation "parent" [Var "Y", Var "Z"]
-    , Relation "descends" [Var "Z", Var "X"]
+    , Relation "descends" [Var "X", Var "Z"]
     ]
   ]
 
