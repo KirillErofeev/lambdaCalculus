@@ -76,8 +76,10 @@ substituteSim ss sim = case sim of
 substitute :: [(Name, Simple)] -> PrologTerm -> PrologTerm
 substitute ss term = case term of
   Sim s -> Sim $ substituteSim ss s
-  Relation name args -> error "Implement me!"
-  _ -> error "Implement me!"
+  Relation name args -> Relation name $ map (substituteSim ss) args
+  Implies iName iArgs iTerms -> let
+    newS = filter (\(n,_) -> n `notElem` iArgs) ss
+    in Implies iName iArgs $ map (substitute newS) iTerms
 
 isImplication :: Name -> [Simple] -> PrologTerm -> Maybe [Goal]
 isImplication name args term = case term of
