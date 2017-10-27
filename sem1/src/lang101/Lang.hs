@@ -88,7 +88,11 @@ isImplication name args term = case term of
   Implies iName iArgs terms
     | iName == name && length iArgs == length args -> let
         newTerms = map (substitute $ zip iArgs args) terms
-        in error "Implement me!"
+        toGoal (Sim s) = Nothing
+        toGoal (Relation name args) = Just (name, args)
+        toGoal (Implies _ _ _) = Nothing
+        goals = mapMaybe toGoal newTerms
+        in Just goals
     | otherwise -> Nothing
 
 goalsToSubst = error "Implement me!"
