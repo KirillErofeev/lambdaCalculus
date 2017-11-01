@@ -5,7 +5,8 @@ module Main where
 import Data.List (isPrefixOf)
 import Control.Monad.State.Lazy
 
-newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
+--newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
+newtype Symbol = Symbol String deriving (Eq,Show,Read)
 
 -- (1)
 data TermS = SymS Symbol        -- x
@@ -24,21 +25,60 @@ symbolStream = map Symbol $ iterate succS "a" where
                    | isPrefixOf xs (repeat 'z') = 'a' : take (length l) (repeat 'a')
                    | True                       = 'a' : succS xs
 
-alpha :: TermS -> TermS
-alpha term = evalState (alpha' term) symbolStream
+captureSub x x' (SymS y) | x == y = SymS x'
+                         | True   = SymS y
 
-alpha' :: TermS -> State [Symbol] TermS
-alpha' (SymS x)   = state $ \(s:ss) -> (SymS s, ss)
+captureSub x x' (AppS t1 t2) = AppS (cs t1) (cs t2) where
+    cs = captureSub x x'
+
+captureSub x x' term@(LamS sym t) | sym == x = term 
+                                  | True     = LamS sym (captureSub x x' t)
+
+alpha :: TermS -> TermS
+alpha term = evalState (alpha' term ) (symbolStream, [])
+
+alphatest term = runState (alpha' term ) (symbolStream, [])
+
+alpha' :: TermS -> State ([Symbol], [Symbol]) TermS
+alpha' (SymS x)   = state $ sub where 
+     sub ((s:ss), bounded) | x `elem` bounded = (SymS x, ((s:ss), bounded))
+                           | True             = (SymS s, ((ss), bounded))
+
 alpha' (AppS x y) = do
      x' <- alpha' x
      y' <- alpha' y
      return $ AppS x' y'
+
 alpha' (LamS x y) = do
+    (x':x's) <- (fst <$> get)
+    bounded  <- (snd <$> get)
+    put (x's, x':bounded)
+    r <- alpha' (captureSub x x' y)
+    return $ LamS x' r 
+
+test = lam "x" $ lam "x" $ lam "x" $ app 
+    (app 
+        (lam "b" $ lam "f" $ lam "s" ( app (sym "b") (app (sym "f") (sym "s")))) 
+          (lam "x" $ lam "y" (sym "x"))) 
+                   (app 
+                       (lam "x" (sym "x")) (lam "x" $ lam "y" (sym "y")))
+
 
 -- (1)
 -- один шаг редукции, если это возможно. Стратегия вычислений - полная, т.е. редуцируются все возможные редексы.
+hasRedex (AppS _ _) = True
+hasRedex (SymS _ )  = False
+hasRedex (LamS s t) = hasRedex t
+
 beta :: TermS -> Maybe TermS
-beta = error "Implement me!"
+beta (SymS x) = Nothing
+
+beta (LamS s t) | hasRedex t = LamS s (beta t)
+                | True       = Nothing
+
+--beta (Apps t1 t2) = 
+
+
 
 -- (2)
 data TermI = SymI Int
@@ -63,7 +103,7 @@ full a b term = lastUnf 10000 b (a term)
         lastUnf 0 _ x = x
         lastUnf n f x = case f x of
           Nothing -> x
-          Just y -> lastUnf (n-1) f y
+          Just y -> lastUnf (n-1) f (a y)
 
 data TermP = TermP TermS
            -- (3)
