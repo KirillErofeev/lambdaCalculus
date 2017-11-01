@@ -1,4 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Main where
+
+import Data.List (isPrefixOf)
+import Control.Monad.State.Lazy
 
 newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
 
@@ -8,10 +13,27 @@ data TermS = SymS Symbol        -- x
            | AppS TermS TermS   -- t1 t2
            deriving (Eq,Show,Read)
 
+sym x     = SymS (Symbol x)
+lam x t   = LamS (Symbol x) t
+app t1 t2 = AppS t1 t2
+
 -- (1)
 -- переименовать все переменные так, чтобы все они были разными.
+symbolStream = map Symbol $ iterate succS "a" where
+    succS l@(x:xs) | x < 'z'                    = succ x : xs
+                   | isPrefixOf xs (repeat 'z') = 'a' : take (length l) (repeat 'a')
+                   | True                       = 'a' : succS xs
+
 alpha :: TermS -> TermS
-alpha = error "Implement me!"
+alpha term = evalState (alpha' term) symbolStream
+
+alpha' :: TermS -> State [Symbol] TermS
+alpha' (SymS x)   = state $ \(s:ss) -> (SymS s, ss)
+alpha' (AppS x y) = do
+     x' <- alpha' x
+     y' <- alpha' y
+     return $ AppS x' y'
+alpha' (LamS x y) = do
 
 -- (1)
 -- один шаг редукции, если это возможно. Стратегия вычислений - полная, т.е. редуцируются все возможные редексы.
