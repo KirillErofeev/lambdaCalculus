@@ -77,9 +77,9 @@ toTermS :: TermP -> TermS
 toTermS = error "Implement me!"
 
 solve :: TermP -> Either TermI TermS
-solve = error "Choose your variant"
+-- solve = error "Choose your variant"
 -- (1)
--- solve = Right . full alpha beta . toTermS
+solve = Right . full id (beta . alpha) . toTermS
 -- (2)
 -- solve = Left . full toTermI betaI . toTermS
 
