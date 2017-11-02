@@ -2,11 +2,15 @@
 
 module Main where
 
-import Data.List (isPrefixOf)
+import Data.List (intersect, isPrefixOf)
 import Control.Monad.State.Lazy
 
---newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Show,Read)
-newtype Symbol = Symbol String deriving (Eq,Show,Read)
+newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Read)
+--newtype Symbol = Symbol String deriving (Eq,Show,Read)
+
+instance Show Symbol where
+    show (Symbol x) = show x
+
 
 -- (1)
 data TermS = SymS Symbol        -- x
@@ -25,19 +29,30 @@ symbolStream = map Symbol $ iterate succS "a" where
                    | isPrefixOf xs (repeat 'z') = 'a' : take (length l) (repeat 'a')
                    | True                       = 'a' : succS xs
 
-captureSub x x' (SymS y) | x == y = SymS x'
-                         | True   = SymS y
+captureSub (SymS x) x' (SymS y) | x == y =  x'
+                                | True   =  SymS y
 
 captureSub x x' (AppS t1 t2) = AppS (cs t1) (cs t2) where
     cs = captureSub x x'
 
-captureSub x x' term@(LamS sym t) | sym == x = term 
-                                  | True     = LamS sym (captureSub x x' t)
+captureSub sx@(SymS x) x' term@(LamS sym t) 
+                        | sym == x  = term 
+                        | True      = LamS sym (captureSub sx x' t)
 
 alpha :: TermS -> TermS
 alpha term = evalState (alpha' term ) (symbolStream, [])
 
 alphatest term = runState (alpha' term ) (symbolStream, [])
+
+setBounds bs (s,b) = (s, bs)
+
+isBounded _ (SymS _) = False
+isBounded x (AppS t1 t2) = isBounded x t1 || isBounded x t2
+isBounded x'@(SymS x) (LamS s t)    | x == s = True
+                                    | True   = isBounded x' t
+
+discardBounded term st@((sym:syms),b) | isBounded (SymS sym) term = discardBounded term (syms, b)
+                                      | True                      = st 
 
 alpha' :: TermS -> State ([Symbol], [Symbol]) TermS
 alpha' (SymS x)   = state $ sub where 
@@ -45,38 +60,57 @@ alpha' (SymS x)   = state $ sub where
                            | True             = (SymS s, ((ss), bounded))
 
 alpha' (AppS x y) = do
+     --bounded <- (snd <$> get)
      x' <- alpha' x
+     --bounded' <- (snd <$> get)
+
+     --modify $ setBounds (intersect bounded bounded')
+
+     --bounded <- (snd <$> get)
      y' <- alpha' y
+     --bounded' <- (snd <$> get)
+
+     --modify $ setBounds (intersect bounded bounded')
+
      return $ AppS x' y'
 
 alpha' (LamS x y) = do
+    modify $ discardBounded y
     (x':x's) <- (fst <$> get)
     bounded  <- (snd <$> get)
     put (x's, x':bounded)
-    r <- alpha' (captureSub x x' y)
+    r <- alpha' (captureSub (SymS x) (SymS x') y)
+    --bounded' <- (snd <$> get)
+    --modify $ setBounds (intersect bounded bounded')
     return $ LamS x' r 
-
-test = lam "x" $ lam "x" $ lam "x" $ app 
-    (app 
-        (lam "b" $ lam "f" $ lam "s" ( app (sym "b") (app (sym "f") (sym "s")))) 
-          (lam "x" $ lam "y" (sym "x"))) 
-                   (app 
-                       (lam "x" (sym "x")) (lam "x" $ lam "y" (sym "y")))
-
-
 -- (1)
 -- один шаг редукции, если это возможно. Стратегия вычислений - полная, т.е. редуцируются все возможные редексы.
-hasRedex (AppS _ _) = True
-hasRedex (SymS _ )  = False
-hasRedex (LamS s t) = hasRedex t
+hasRedex (AppS (LamS _ _) _) = True
+hasRedex (AppS (SymS _) t)   = hasRedex t
+hasRedex (AppS t1 t2)        =  hasRedex t1 || hasRedex t2
+hasRedex (SymS _ )           = False
+hasRedex (LamS s t)          = hasRedex t
 
 beta :: TermS -> Maybe TermS
 beta (SymS x) = Nothing
 
-beta (LamS s t) | hasRedex t = LamS s (beta t)
+beta (LamS s t) | hasRedex t = let
+                                   Just beta_t = beta t 
+                               in 
+                                   Just $ LamS s beta_t
                 | True       = Nothing
 
---beta (Apps t1 t2) = 
+beta (AppS (SymS _) t2) = Nothing
+beta (AppS (LamS sym t) t1) = Just $ captureSub (SymS sym) t1 t
+beta t@(AppS t1 t2) | hasRedex t1 = let
+                                        Just beta_t1 = beta t1 
+                                    in 
+                                        Just $ AppS (beta_t1) t2
+                    | hasRedex t2 = let
+                                        Just beta_t2 = beta t2 
+                                    in 
+                                        Just $ AppS (t1) (beta_t2)
+                    | True        = Nothing
 
 
 
@@ -103,7 +137,14 @@ full a b term = lastUnf 10000 b (a term)
         lastUnf 0 _ x = x
         lastUnf n f x = case f x of
           Nothing -> x
-          Just y -> lastUnf (n-1) f (a y)
+          Just y -> lastUnf (n-1) f y
+
+-- выполнять редукцию до конца (но не больше 10000 шагов из-за возможности зависания)
+full' a b term = lastUnf 10000 (a term) where
+        lastUnf 0 x = x
+        lastUnf n x = case b x of
+          Nothing -> x
+          Just y -> lastUnf (n-1) (a y)
 
 data TermP = TermP TermS
            -- (3)
@@ -149,3 +190,20 @@ main :: IO ()
 main = do
   s <- read <$> getLine
   print $ solve s
+
+
+
+
+
+test = lam "x" $ lam "x" $ lam "x" $  
+    (app 
+        (app
+            (app
+            (lam "b" $ lam "f" $ lam "s" ( app (app (sym "b") (sym "f")) (sym "s"))) 
+                 (lam "x" $ lam "y" (sym "x"))) 
+                      (lam "x" (sym "x"))) 
+                          (lam "x" $ lam "y" (sym "y")))
+
+w   = lam "x" $ app (sym "x") (sym "x")
+one = lam "x" $ lam "y" $ app (sym "x") (sym "y")
+
