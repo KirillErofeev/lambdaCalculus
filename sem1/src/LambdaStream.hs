@@ -1,4 +1,4 @@
-module LambdaStream 
+module LambdaStream
      --(lambdaStream) 
          where
 
@@ -15,3 +15,5 @@ makeLambdas (l,r) = map (uncurry app) (pairs (lambdas l) (lambdas r))
 splits n = [ (x, n-x) | x<-[1..n-1]]
 
 pairs x y = [(a,b) | a<-x, b<-y]
+
+lambdaStreamNum = zip lambdaStream [1..]

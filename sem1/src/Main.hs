@@ -48,11 +48,8 @@ alpha' (SymS x)   = state $ sub where
                            | True             = (SymS s, ((ss), bounded))
 
 alpha' (AppS x y) = do
-     bounded <- (snd <$> get)
      x' <- alpha' x
-     modify $ setBounds bounded
      y' <- alpha' y
-     modify $ setBounds bounded
      return $ AppS x' y'
 
 alpha' (LamS x y) = do
@@ -62,7 +59,7 @@ alpha' (LamS x y) = do
     put (x's, x':bounded)
     r <- alpha' (captureSub (SymS x) (SymS x') y)
     bounded' <- (snd <$> get)
-    modify $ setBounds (intersect bounded bounded')
+    modify $ setBounds bounded
     return $ LamS x' r 
 
 -- (1)
@@ -76,29 +73,24 @@ hasRedex (LamS s t)          = hasRedex t
 beta :: TermS -> Maybe TermS
 beta (SymS x) = Nothing
 
-beta (LamS s t) | hasRedex t = let
-                                   Just beta_t = beta t 
-                               in 
-                                   Just $ LamS s beta_t
+beta (LamS s t) | hasRedex t = Just $ LamS s (unsafeBeta t)
                 | True       = Nothing
 
-beta (AppS (SymS _) t2) = Nothing
+beta (AppS (SymS t) t') | hasRedex t' = Just (AppS (SymS t) (unsafeBeta t'))
+                        | True        = Nothing
+
 beta (AppS (LamS sym t) t1) = Just $ captureSub (SymS sym) t1 t
-beta t@(AppS t1 t2) | hasRedex t1 = let
-                                        Just beta_t1 = beta t1 
-                                    in 
-                                        Just $ AppS (beta_t1) t2
-                    | hasRedex t2 = let
-                                        Just beta_t2 = beta t2 
-                                    in 
-                                        Just $ AppS (t1) (beta_t2)
+
+beta t@(AppS t1 t2) | hasRedex t1 = Just $ AppS (unsafeBeta t1) t2
+                    | hasRedex t2 = Just $ AppS (t1) (unsafeBeta t2)
                     | True        = Nothing
 
+unsafeBeta t = let Just t' = beta t in t'
 
 eq t t' = toN t == toN t' where
      toN t = alpha $ full'' t
 
-findId = take 7 $ filter (eq i) $ lambdaStream 
+find t n = take n $ filter (eq t) $ lambdaStream 
 
 -- (2)
 data TermI = SymI Int
@@ -179,7 +171,10 @@ main = do
   s <- read <$> getLine
   print $ solve s
 
-
-
-
-
+--alpha' (AppS x y) = do
+--     bounded <- (snd <$> get)
+--     x' <- alpha' x
+--     modify $ setBounds bounded
+--     y' <- alpha' y
+--     modify $ setBounds bounded
+--     return $ AppS x' y'
