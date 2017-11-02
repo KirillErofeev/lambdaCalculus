@@ -1,0 +1,11 @@
+human(sokrat).
+human(platon).
+parent(sokrat, platon).
+parent(platon,aristotle).
+mortal(Someone) :-
+  human (Someone) .
+descends(X,Y) :-
+  parent(Y,X).
+descends(X,Y):-
+  parent(Z,X),
+  parent(Z,Y).
