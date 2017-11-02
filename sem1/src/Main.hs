@@ -5,22 +5,9 @@ module Main where
 import Data.List (intersect, isPrefixOf)
 import Control.Monad.State.Lazy
 
-newtype Symbol = Symbol { unSymbol :: String } deriving (Eq,Read)
---newtype Symbol = Symbol String deriving (Eq,Show,Read)
-
-instance Show Symbol where
-    show (Symbol x) = show x
-
-
--- (1)
-data TermS = SymS Symbol        -- x
-           | LamS Symbol TermS  -- \x -> t
-           | AppS TermS TermS   -- t1 t2
-           deriving (Eq,Show,Read)
-
-sym x     = SymS (Symbol x)
-lam x t   = LamS (Symbol x) t
-app t1 t2 = AppS t1 t2
+import Types
+import LambdaStream
+import Combinators
 
 -- (1)
 -- переименовать все переменные так, чтобы все они были разными.
@@ -39,8 +26,6 @@ captureSub sx@(SymS x) x' term@(LamS sym t)
                         | sym == x  = term 
                         | True      = LamS sym (captureSub sx x' t)
 
-alpha :: TermS -> TermS
-alpha term = evalState (alpha' term ) (symbolStream, [])
 
 alphatest term = runState (alpha' term ) (symbolStream, [])
 
@@ -54,24 +39,20 @@ isBounded x'@(SymS x) (LamS s t)    | x == s = True
 discardBounded term st@((sym:syms),b) | isBounded (SymS sym) term = discardBounded term (syms, b)
                                       | True                      = st 
 
+alpha :: TermS -> TermS
+alpha term = evalState (alpha' term ) (symbolStream, [])
+
 alpha' :: TermS -> State ([Symbol], [Symbol]) TermS
 alpha' (SymS x)   = state $ sub where 
      sub ((s:ss), bounded) | x `elem` bounded = (SymS x, ((s:ss), bounded))
                            | True             = (SymS s, ((ss), bounded))
 
 alpha' (AppS x y) = do
-     --bounded <- (snd <$> get)
+     bounded <- (snd <$> get)
      x' <- alpha' x
-     --bounded' <- (snd <$> get)
-
-     --modify $ setBounds (intersect bounded bounded')
-
-     --bounded <- (snd <$> get)
+     modify $ setBounds bounded
      y' <- alpha' y
-     --bounded' <- (snd <$> get)
-
-     --modify $ setBounds (intersect bounded bounded')
-
+     modify $ setBounds bounded
      return $ AppS x' y'
 
 alpha' (LamS x y) = do
@@ -80,14 +61,15 @@ alpha' (LamS x y) = do
     bounded  <- (snd <$> get)
     put (x's, x':bounded)
     r <- alpha' (captureSub (SymS x) (SymS x') y)
-    --bounded' <- (snd <$> get)
-    --modify $ setBounds (intersect bounded bounded')
+    bounded' <- (snd <$> get)
+    modify $ setBounds (intersect bounded bounded')
     return $ LamS x' r 
+
 -- (1)
 -- один шаг редукции, если это возможно. Стратегия вычислений - полная, т.е. редуцируются все возможные редексы.
 hasRedex (AppS (LamS _ _) _) = True
 hasRedex (AppS (SymS _) t)   = hasRedex t
-hasRedex (AppS t1 t2)        =  hasRedex t1 || hasRedex t2
+hasRedex (AppS t1 t2)        = hasRedex t1 || hasRedex t2
 hasRedex (SymS _ )           = False
 hasRedex (LamS s t)          = hasRedex t
 
@@ -113,6 +95,10 @@ beta t@(AppS t1 t2) | hasRedex t1 = let
                     | True        = Nothing
 
 
+eq t t' = toN t == toN t' where
+     toN t = alpha $ full'' t
+
+findId = take 7 $ filter (eq i) $ lambdaStream 
 
 -- (2)
 data TermI = SymI Int
@@ -145,6 +131,8 @@ full' a b term = lastUnf 10000 (a term) where
         lastUnf n x = case b x of
           Nothing -> x
           Just y -> lastUnf (n-1) (a y)
+
+full'' = full' alpha beta
 
 data TermP = TermP TermS
            -- (3)
@@ -194,16 +182,4 @@ main = do
 
 
 
-
-test = lam "x" $ lam "x" $ lam "x" $  
-    (app 
-        (app
-            (app
-            (lam "b" $ lam "f" $ lam "s" ( app (app (sym "b") (sym "f")) (sym "s"))) 
-                 (lam "x" $ lam "y" (sym "x"))) 
-                      (lam "x" (sym "x"))) 
-                          (lam "x" $ lam "y" (sym "y")))
-
-w   = lam "x" $ app (sym "x") (sym "x")
-one = lam "x" $ lam "y" $ app (sym "x") (sym "y")
 
