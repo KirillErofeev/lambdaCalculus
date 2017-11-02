@@ -78,5 +78,20 @@ instance Applicative Parser where
 -- Parser pv =
 -- v
 
+-- pure ($ y) <*> u =
+-- pure (\x -> x y) <*> Parser pu =
+-- Parser (\s -> [(s, \x -> x y)]) <*> Parser pu =
+-- Parser $ \s -> let { frs = pf s } in ... =
+-- Parser $ \s -> map (\(rest,x) -> (rest, (\x -> x y) x)) $ pu s =
+-- Parser $ \s -> map (\(rest,x) -> (rest, x y)) $ pu s =
+--
+-- Parser $ \s -> map (\(t,f) -> (t, f y)) $ pu s =
+-- Parser $ \s -> concatMap (\(t,f) -> [(t, f y)]) $ pu s =
+-- Parser $ \s -> concatMap (\(t,f) -> map (...) [(s,y)]) =
+-- Parser $ \s -> let { frs = pu s }
+--                in concatMap (\(t,f) -> map (...) $ pv t) $ pu s=
+-- Parser $ \s -> let { frs = pf s } in ... =
+-- Parser pu <*> Parser $ \s -> [(s, y)] =
+-- u <*> pure y
 
 
