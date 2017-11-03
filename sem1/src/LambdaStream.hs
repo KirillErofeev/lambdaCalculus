@@ -2,6 +2,7 @@ module LambdaStream
      --(lambdaStream) 
          where
 
+import qualified Data.Set as S
 import Types
 import Combinators
 
@@ -17,3 +18,4 @@ splits n = [ (x, n-x) | x<-[1..n-1]]
 pairs x y = [(a,b) | a<-x, b<-y]
 
 lambdaStreamNum = zip lambdaStream [1..]
+

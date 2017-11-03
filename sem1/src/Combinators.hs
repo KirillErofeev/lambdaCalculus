@@ -7,6 +7,10 @@ y = "y"
 z = "z"
 g = "g"
 f = "f"
+t = "t"
+b = "b"
+s'= "s"
+p = "p"
 
 test = lam "x" $ lam "x" $ lam "x" $  
     (app 
@@ -33,3 +37,15 @@ i = lam x $ sym x
 sai = lam f $ app 
     (app (sym f) s)
      (lam x $ lam y $ lam z $ sym x)
+
+true  = lam t $ lam f $ sym t
+false = lam t $ lam f $ sym f
+iff   = lam b $ lam t $ lam f $ app3 (sym b) (sym t) (sym f)
+
+pair  = lam f $ lam s' $ lam b $ app3 (sym b) (sym f) (sym s')
+fst'   = lam p $ app (sym p) true
+snd'   = lam p $ app (sym p) false
+
+omega = app (lam x $ app (sym x) (sym x)) (lam x $ app (sym x) (sym x))
+fx   = lam f $ app fx' fx'
+fx'  = lam x $ app (sym f) (lam y $ app3 (sym x) (sym x) (sym y))
