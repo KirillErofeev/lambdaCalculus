@@ -61,6 +61,7 @@ data TermP = TermP TermS
            | Tail TermP
            deriving (Eq,Show,Read)
 
+--true, app, iff и пр. определены в Combinators.hs
 toTermS :: TermP -> TermS
 toTermS (Boolean True)  = true
 toTermS (Boolean False) = false

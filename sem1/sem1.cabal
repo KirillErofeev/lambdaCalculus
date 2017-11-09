@@ -20,5 +20,6 @@ executable sem1
   build-depends:       base >= 4.7 && < 5
                      , mtl
                      , primes
+                     , containers
 
  
