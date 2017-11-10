@@ -111,7 +111,7 @@ full'' = full' alpha beta
 eq t t' = toN t == toN t' where
      toN t = alpha $ full'' t
 
-eqLU t t' = t == toN t' where
+eqLN t t' = t == toN t' where
      toN t = alpha $ full'' t
 
 -- выполнять редукцию до конца (но не больше 10000 шагов из-за возможности зависания)

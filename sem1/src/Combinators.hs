@@ -21,7 +21,7 @@ test = lam "x" $ lam "x" $ lam "x" $
                       (lam "x" (sym "x"))) 
                           (lam "x" $ lam "y" (sym "y")))
 
-w   = lam "x" $ app (sym "x") (sym "x")
+w   = lam "a" $ app (sym "a") (sym "a")
 
 one = lam "x" $ lam "y" $ app (sym "x") (sym "y")
 
